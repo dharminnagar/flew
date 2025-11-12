@@ -25,7 +25,8 @@ pub struct Market {
     pub close_time: i64,              
     pub resolution_time: Option<i64>,
     pub payout_ratio: u64,           
-    pub bump: u8
+    pub bump: u8,
+    pub vault_bump: u8,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
