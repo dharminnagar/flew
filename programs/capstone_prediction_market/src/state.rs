@@ -27,6 +27,7 @@ pub struct Market {
     pub payout_ratio: u64,           
     pub bump: u8,
     pub vault_bump: u8,
+    pub lp_bump: u8,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
