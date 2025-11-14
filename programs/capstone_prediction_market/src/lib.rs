@@ -12,12 +12,23 @@ declare_id!("72jWpfijYJqBf8L69Qw92o7tNKDBDKaiYUziDco7vMZL");
 
 #[program]
 pub mod capstone_prediction_market {
-    use crate::instructions::{InitializeProtocol, initialize_protocol};
-
     use super::*;
 
     pub fn initialize(ctx: Context<InitializeProtocol>, fee_rate: u16) -> Result<()> {
         initialize_protocol(ctx, fee_rate)
+    }
+
+    pub fn create_market(
+        ctx: Context<CreateMarket>,
+        question: [u8; 200],
+        initial_liquidity: u64,
+        close_time: i64,
+    ) -> Result<()> {
+        instructions::create_market(ctx, question, initial_liquidity, close_time)
+    }
+
+    pub fn place_bet(ctx: Context<PlaceBet>, side: bool, amount: u64) -> Result<()> {
+        instructions::place_bet(ctx, side, amount)
     }
 }
 
