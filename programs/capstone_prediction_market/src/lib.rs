@@ -30,6 +30,10 @@ pub mod capstone_prediction_market {
     pub fn place_bet(ctx: Context<PlaceBet>, side: bool, amount: u64) -> Result<()> {
         instructions::place_bet(ctx, side, amount)
     }
+
+    pub fn resolve_market(ctx: Context<ResolveMarket>, outcome: bool) -> Result<()> {
+        instructions::resolve_market(ctx, outcome)
+    }
 }
 
 // #[derive(Accounts)]
