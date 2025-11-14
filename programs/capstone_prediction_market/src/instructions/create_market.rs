@@ -9,35 +9,6 @@ pub fn create_market(
     initial_liquidity: u64,
     close_time: i64,
 ) -> Result<()> {
-    // Think about what you need to do:
-    // 1. Get mutable references to global_state, market, lp_position
-    // 2. Increment market counter
-    // 3. Initialize the Market:
-    //    - market_id from incremented counter
-    //    - question from parameter
-    //    - creator = who's calling this?
-    //    - resolver = same as creator (for now)
-    //    - yes_pool = initial_liquidity / 2
-    //    - no_pool = initial_liquidity / 2
-    //    - total_liquidity = initial_liquidity
-    //    - state = Active
-    //    - outcome = None (not resolved yet)
-    //    - close_time from parameter
-    //    - resolution_time = None
-    //    - payout_ratio = 0 (will be calculated on resolution)
-    //    - bump from ctx.bumps
-    // 4. Initialize the LP Position:
-    //    - lp_provider = creator
-    //    - market = market's key
-    //    - liquidity_provided = initial_liquidity
-    //    - fees_earned = 0
-    //    - fees_claimed = false
-    //    - fees_claimed_amount = 0
-    //    - bump from ctx.bumps
-    // 5. Transfer SOL from creator to market_vault
-    //    Use: system_program::transfer()
-    //    Need: CpiContext::new() with Transfer struct
-
     let global_state = &mut ctx.accounts.global_state;
     let market = &mut ctx.accounts.market;
     let lp_position = &mut ctx.accounts.lp_position;
@@ -49,11 +20,12 @@ pub fn create_market(
     market.creator = ctx.accounts.creator.key();
     market.question = question;
     market.state = MarketState::Active;
-
+    
     market.yes_pool = initial_liquidity / 2;
     market.no_pool = initial_liquidity / 2;
     market.total_liquidity = initial_liquidity;
     market.resolver = ctx.accounts.creator.key();
+    market.lp_bump = ctx.bumps.lp_position;
     
     market.close_time = close_time;
     market.outcome = None;

@@ -31,9 +31,11 @@ pub fn claim_lp_fees(
 
     let cpi_ctx = CpiContext::new_with_signer(system_program.to_account_info(), transfer_accounts, signer_seeds);
 
-    
+    lp_position.fees_claimed = true;
+    lp_position.fees_claimed_amount = lp_position.fees_claimed_amount
+        .checked_add(fees_to_claim)
+        .ok_or(ErrorCode::Overflow)?;
     lp_position.fees_earned = 0;
-    
     
     transfer(cpi_ctx, fees_to_claim)
 }
