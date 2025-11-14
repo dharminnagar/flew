@@ -34,6 +34,10 @@ pub mod capstone_prediction_market {
     pub fn resolve_market(ctx: Context<ResolveMarket>, outcome: bool) -> Result<()> {
         instructions::resolve_market(ctx, outcome)
     }
+
+    pub fn claim_payout(ctx: Context<ClaimPayout>) -> Result<()> {
+        instructions::claim_payout(ctx)
+    }
 }
 
 // #[derive(Accounts)]
