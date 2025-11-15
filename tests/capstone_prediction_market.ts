@@ -441,8 +441,8 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
           .signers([marketCreator])
           .rpc();
 
-        // Wait for market to close
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Wait for market to close (6 seconds to ensure it's past close time)
+        await new Promise(resolve => setTimeout(resolve, 5000));
 
         // Resolve it
         await program.methods
@@ -522,8 +522,8 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
         .signers([marketCreator])
         .rpc();
 
-      // Wait for market to close (3 seconds to be safe)
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Wait for market to close (6 seconds to ensure it's past close time)
+      await new Promise(resolve => setTimeout(resolve, 5000));
 
       // Resolve it
       const tx = await program.methods
@@ -583,8 +583,8 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
           .signers([marketCreator])
           .rpc();
 
-        // Wait for market to close
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Wait for market to close (6 seconds to ensure it's past close time)
+        await new Promise(resolve => setTimeout(resolve, 5000));
       });
 
       it("Should fail when unauthorized user tries to resolve", async () => {
@@ -831,8 +831,8 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
         .signers([losingBettor])
         .rpc();
 
-      // Wait for market to close (2+ seconds)
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Wait for market to close (6 seconds to ensure it's past close time)
+      await new Promise(resolve => setTimeout(resolve, 5000));
 
       // Resolve market (YES wins)
       await program.methods
