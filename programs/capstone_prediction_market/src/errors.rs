@@ -40,4 +40,16 @@ pub enum ErrorCode {
     
     #[msg("No fees to claim")]
     NoFeesToClaim,
+    
+    #[msg("Initial liquidity must be greater than zero")]
+    InvalidLiquidity,
+    
+    #[msg("Close time must be in the future")]
+    InvalidCloseTime,
+    
+    #[msg("Question cannot be empty")]
+    EmptyQuestion,
+    
+    #[msg("Initial liquidity below minimum required (1 SOL)")]
+    LiquidityTooLow,
 }

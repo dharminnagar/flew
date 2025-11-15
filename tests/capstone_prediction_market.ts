@@ -411,7 +411,8 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
       it("Should fail betting on resolved market", async () => {
         const question = Buffer.alloc(200);
         Buffer.from("Market to be resolved").copy(question);
-        const pastCloseTime = new BN(Math.floor(Date.now() / 1000) - 10);
+        // Create market that closes in 2 seconds (future time)
+        const shortCloseTime = new BN(Math.floor(Date.now() / 1000) + 2);
 
         const nextId = getNextMarketId();
         const [resolvedMarket] = PublicKey.findProgramAddressSync(
@@ -428,7 +429,7 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
         );
 
         await program.methods
-          .createMarket(Array.from(question), INITIAL_LIQUIDITY, pastCloseTime)
+          .createMarket(Array.from(question), INITIAL_LIQUIDITY, shortCloseTime)
           .accounts({
             creator: marketCreator.publicKey,
             globalState: globalStatePda,
@@ -439,6 +440,9 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
           })
           .signers([marketCreator])
           .rpc();
+
+        // Wait for market to close
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
         // Resolve it
         await program.methods
@@ -481,12 +485,12 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
   });
 
   describe("Resolve Market", () => {
-    it("Should create and resolve a test market (past close time)", async () => {
+    it("Should create and resolve a test market (short close time)", async () => {
       const question = Buffer.alloc(200);
       Buffer.from("Test market for resolution").copy(question);
       
-      // Create market that's already closed
-      const pastCloseTime = new BN(Math.floor(Date.now() / 1000) - 10);
+      // Create market that closes in 2 seconds
+      const shortCloseTime = new BN(Math.floor(Date.now() / 1000) + 2);
 
       const RESOLVE_MARKET_ID = getNextMarketId(); // Use counter instead of hardcoded 2
       const [testMarketPda] = PublicKey.findProgramAddressSync(
@@ -506,7 +510,7 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
 
       // Create market
       await program.methods
-        .createMarket(Array.from(question), INITIAL_LIQUIDITY, pastCloseTime)
+        .createMarket(Array.from(question), INITIAL_LIQUIDITY, shortCloseTime)
         .accounts({
           creator: marketCreator.publicKey,
           globalState: globalStatePda,
@@ -518,8 +522,8 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
         .signers([marketCreator])
         .rpc();
 
-      // Wait a bit
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait for market to close (3 seconds to be safe)
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
       // Resolve it
       const tx = await program.methods
@@ -549,7 +553,8 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
 
         const question = Buffer.alloc(200);
         Buffer.from("Market for resolution negative tests").copy(question);
-        const pastCloseTime = new BN(Math.floor(Date.now() / 1000) - 10);
+        // Create market that closes in 2 seconds
+        const shortCloseTime = new BN(Math.floor(Date.now() / 1000) + 2);
 
         const nextId = getNextMarketId();
         [unresolvedMarket] = PublicKey.findProgramAddressSync(
@@ -566,7 +571,7 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
         );
 
         await program.methods
-          .createMarket(Array.from(question), INITIAL_LIQUIDITY, pastCloseTime)
+          .createMarket(Array.from(question), INITIAL_LIQUIDITY, shortCloseTime)
           .accounts({
             creator: marketCreator.publicKey,
             globalState: globalStatePda,
@@ -577,6 +582,9 @@ describe("F1 Prediction Market - Complete Test Suite", () => {
           })
           .signers([marketCreator])
           .rpc();
+
+        // Wait for market to close
+        await new Promise(resolve => setTimeout(resolve, 3000));
       });
 
       it("Should fail when unauthorized user tries to resolve", async () => {

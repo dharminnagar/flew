@@ -1,14 +1,26 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::{Transfer, transfer};
 use crate::state::{GlobalState, Market, LPPosition, MarketState};
+use crate::errors::ErrorCode;
 
-// TODO: Define the handler function
+const MIN_LIQUIDITY: u64 = 1_000_000_000; // 1 SOL in lamports
+
 pub fn create_market(
     ctx: Context<CreateMarket>,
     question: [u8; 200],
     initial_liquidity: u64,
     close_time: i64,
 ) -> Result<()> {
+    // validations
+    require!(ctx.accounts.creator.lamports() > 0, ErrorCode::InsufficientBalance);
+    require!(initial_liquidity > 0, ErrorCode::InvalidLiquidity);
+    require!(initial_liquidity >= MIN_LIQUIDITY, ErrorCode::LiquidityTooLow);
+    
+    let current_time = Clock::get()?.unix_timestamp;
+    require!(close_time > current_time, ErrorCode::InvalidCloseTime);
+    
+    require!(question[0] != 0, ErrorCode::EmptyQuestion);
+
     let global_state = &mut ctx.accounts.global_state;
     let market = &mut ctx.accounts.market;
     let lp_position = &mut ctx.accounts.lp_position;
