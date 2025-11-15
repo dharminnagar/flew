@@ -24,10 +24,20 @@ pub fn claim_payout(
         (market.no_pool, market.yes_pool)
     };
 
-    let winner_share = position.amount.checked_mul(losing_pool)
-    .ok_or(ErrorCode::Overflow)?
-    .checked_div(winning_pool)
-    .ok_or(ErrorCode::Overflow)?;
+    // Calculate payout using u128 to prevent overflow, then convert back to u64
+    let position_amount_u128 = position.amount as u128;
+    let losing_pool_u128 = losing_pool as u128;
+    let winning_pool_u128 = winning_pool as u128;
+
+    let winner_share_u128 = position_amount_u128
+        .checked_mul(losing_pool_u128)
+        .ok_or(ErrorCode::Overflow)?
+        .checked_div(winning_pool_u128)
+        .ok_or(ErrorCode::Overflow)?;
+    
+    let winner_share = u64::try_from(winner_share_u128)
+        .map_err(|_| ErrorCode::Overflow)?;
+
     let total_payout = position.amount.checked_add(winner_share)
         .ok_or(ErrorCode::Overflow)?;
 
