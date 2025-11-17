@@ -1,6 +1,5 @@
 import { Telegraf, Context, Markup } from 'telegraf';
-import { Connection, PublicKey, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { Program, AnchorProvider, Wallet, web3 } from '@coral-xyz/anchor';
+import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import dotenv from 'dotenv';
 import { WalletManager } from './wallet';
 import { SolanaService } from './solana';
