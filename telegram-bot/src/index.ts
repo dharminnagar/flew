@@ -71,23 +71,18 @@ class F1PredictionBot {
           `*Wallet:*\n` +
           `/wallet - View your wallet address and balance\n` +
           `/deposit - Get deposit instructions\n` +
-          `/withdraw <address> <amount> - Send SOL to external wallet\n` +
-          `/export - View wallet information\n\n` +
+          `/withdraw <address> <amount> - Send SOL to external wallet\n\n` +
           `*Markets:*\n` +
           `/markets - View active prediction markets\n` +
-          `/market <id> - View specific market details\n` +
-          `/create - Create a new prediction market\n` +
-          `/resolve <id> <yes/no> - Resolve a market (creator only)\n\n` +
+          `/create - Create a new prediction market\n\n` +
           `*Betting:*\n` +
           `/bet <id> <yes/no> <amount> - Place a bet\n` +
-          `/positions - View your open positions\n\n` +
-          `*Claims:*\n` +
-          `/claim <id> - Claim your winnings\n` +
-          `/rewards - View claimable LP fees\n` +
-          `/claimfees <id> - Claim LP fees (creators)\n\n` +
+          `/positions - View positions and LP rewards\n` +
+          `/claim <id> - Claim winnings or LP fees\n\n` +
+          `*Resolution:*\n` +
+          `/resolve <id> <yes/no> - Resolve market (creator only)\n\n` +
           `*Info:*\n` +
-          `/help - Show this help message\n` +
-          `/about - About the platform`,
+          `/help - Show this message`,
           { parse_mode: 'Markdown' }
         );
       } catch (error) {
@@ -247,20 +242,60 @@ class F1PredictionBot {
         
         const userPublicKey = new PublicKey(wallet.address);
         const positions = await this.solanaService.getUserPositions(userPublicKey);
+        const markets = await this.solanaService.getActiveMarkets();
         
         if (positions.length === 0) {
           await ctx.reply('📭 No open positions. Use /markets to place your first bet!');
-          return;
+        } else {
+          await ctx.reply(`📊 *Your Positions* (${positions.length})\n`, { parse_mode: 'Markdown' });
+
+          for (const position of positions) {
+            const market = await this.solanaService.getMarket(position.market.toBase58() as any);
+            const marketQuestion = market?.question || 'Unknown market';
+            
+            await ctx.reply(
+              formatPosition(position, marketQuestion),
+              { parse_mode: 'Markdown' }
+            );
+          }
         }
 
-        await ctx.reply(`📊 *Your Positions* (${positions.length})\n`, { parse_mode: 'Markdown' });
+        // Check for LP rewards (markets created by this user)
+        let totalRewards = 0;
+        let marketsWithRewards: any[] = [];
 
-        for (const position of positions) {
-          const market = await this.solanaService.getMarket(position.market.toBase58() as any);
-          const marketQuestion = market?.question || 'Unknown market';
-          
+        for (const market of markets) {
+          if (market.creator.toString() === userPublicKey.toString()) {
+            const [lpPositionPDA] = await this.solanaService['getLPPositionPDA'](market.publicKey, userPublicKey);
+            
+            try {
+              const dummyKeypair = Keypair.generate();
+              const provider = this.solanaService['getProvider'](dummyKeypair);
+              const program = this.solanaService['getProgram'](provider);
+              const lpPosition = await (program.account as any).lpPosition.fetch(lpPositionPDA);
+              
+              const unclaimedFees = lpPosition.feesEarned.toNumber() - lpPosition.feesClaimedAmount.toNumber();
+              
+              if (unclaimedFees > 0) {
+                totalRewards += unclaimedFees;
+                marketsWithRewards.push({ market, unclaimedFees });
+              }
+            } catch (err) {
+              // LP position might not exist or other error
+              continue;
+            }
+          }
+        }
+
+        if (marketsWithRewards.length > 0) {
           await ctx.reply(
-            formatPosition(position, marketQuestion),
+            `💰 *LP Rewards Available*\n\n` +
+            `You have unclaimed LP fees from ${marketsWithRewards.length} market(s):\n\n` +
+            marketsWithRewards.map(({ market, unclaimedFees }) => 
+              `Market #${market.marketId}: ${formatSOL(unclaimedFees)} SOL`
+            ).join('\n') +
+            `\n\n*Total: ${formatSOL(totalRewards)} SOL*\n\n` +
+            `To claim, use: /claim <market_id>`,
             { parse_mode: 'Markdown' }
           );
         }
@@ -361,7 +396,7 @@ class F1PredictionBot {
       }
     });
 
-    // Claim command
+    // Claim command - handles both position payouts and LP fees
     this.bot.command('claim', async (ctx) => {
       const userId = ctx.from.id.toString();
       
@@ -375,7 +410,10 @@ class F1PredictionBot {
       if (args.length < 2) {
         await ctx.reply(
           'Usage: /claim <market_id>\n\n' +
-          'Use /positions to see your claimable positions.'
+          'This will claim either:\n' +
+          '• Your winning position payout, OR\n' +
+          '• Your LP fees (if you created the market)\n\n' +
+          'Use /positions to see claimable amounts.'
         );
         return;
       }
@@ -386,20 +424,57 @@ class F1PredictionBot {
         return;
       }
 
-      await ctx.reply('🔄 Claiming payout...');
+      await ctx.reply('🔄 Processing claim...');
 
       try {
-        const signature = await this.solanaService.claimPayout(userId, marketId);
+        const wallet = await this.walletManager.getWallet(userId);
+        if (!wallet) {
+          await ctx.reply('❌ Wallet not found.');
+          return;
+        }
+
+        const market = await this.solanaService.getMarket(marketId);
+        if (!market) {
+          await ctx.reply('❌ Market not found.');
+          return;
+        }
+
+        const userPublicKey = new PublicKey(wallet.address);
+        const isCreator = market.creator.toString() === userPublicKey.toString();
+
+        let signature: string;
+        let claimType: string;
+
+        if (isCreator) {
+          // Try to claim LP fees
+          signature = await this.solanaService.claimLPFees(userId, marketId);
+          claimType = 'LP Fees';
+        } else {
+          // Try to claim position payout
+          signature = await this.solanaService.claimPayout(userId, marketId);
+          claimType = 'Payout';
+        }
 
         await ctx.reply(
-          `✅ *Payout Claimed!*\n\n` +
-          `Market: ${marketId}\n` +
-          `TX: \`${signature}\`\n\n` +
-          `View on Solana Explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`,
+          `✅ *${claimType} Claimed!*\n\n` +
+          `Market: #${marketId}\n` +
+          `TX: \`${signature.slice(0, 20)}...\`\n\n` +
+          `View on Solana Explorer:\nhttps://explorer.solana.com/tx/${signature}?cluster=devnet`,
           { parse_mode: 'Markdown' }
         );
       } catch (error: any) {
-        await ctx.reply(`❌ Failed to claim payout: ${error.message}`);
+        console.error('Error in /claim:', error);
+        let errorMsg = 'Failed to claim.';
+        
+        if (error.message?.includes('AlreadyClaimed')) {
+          errorMsg = '❌ Already claimed or nothing to claim.';
+        } else if (error.message?.includes('MarketNotResolved')) {
+          errorMsg = '❌ Market has not been resolved yet.';
+        } else {
+          errorMsg = `❌ ${error.message || 'Unknown error occurred'}`;
+        }
+        
+        await ctx.reply(errorMsg);
       }
     });
 
@@ -526,30 +601,6 @@ class F1PredictionBot {
         }
         
         await ctx.reply(errorMsg);
-      }
-    });
-
-    // Export private key command
-    this.bot.command('export', async (ctx) => {
-      const userId = ctx.from.id.toString();
-      
-      if (!this.walletManager.hasWallet(userId)) {
-        await ctx.reply('❌ You don\'t have a wallet yet. Use /start to create one.');
-        return;
-      }
-
-      // Only allow in private messages
-      if (ctx.chat.type !== 'private') {
-        await ctx.reply('⚠️ For security, this command only works in private messages. Please DM me.');
-        return;
-      }
-
-      try {
-        const exportInfo = await this.walletManager.getWalletExportInfo(userId);
-        await ctx.reply(exportInfo, { parse_mode: 'Markdown' });
-      } catch (error) {
-        console.error('Error in /export:', error);
-        await ctx.reply('❌ Error retrieving wallet information. Please try again.');
       }
     });
 
@@ -855,22 +906,6 @@ class F1PredictionBot {
       }
     });
 
-    // About command
-    this.bot.command('about', (ctx) => {
-      ctx.reply(
-        `🏎️ *F1 Prediction Market*\n\n` +
-        `A decentralized prediction market for Formula 1 races, ` +
-        `built on Solana blockchain.\n\n` +
-        `*Features:*\n` +
-        `• Bet on F1 race outcomes\n` +
-        `• Create your own prediction markets\n` +
-        `• Earn fees as a market creator\n` +
-        `• Fast transactions on Solana\n` +
-        `• Non-custodial embedded wallets\n\n` +
-        `Built with ❤️ for F1 fans`,
-        { parse_mode: 'Markdown' }
-      );
-    });
   }
 
   private setupCallbacks() {
@@ -972,16 +1007,11 @@ class F1PredictionBot {
         { command: 'deposit', description: 'Get deposit instructions' },
         { command: 'withdraw', description: 'Send SOL to external wallet' },
         { command: 'markets', description: 'View active prediction markets' },
-        { command: 'market', description: 'View specific market details' },
         { command: 'create', description: 'Create a new prediction market' },
         { command: 'bet', description: 'Place a bet on a market' },
-        { command: 'resolve', description: 'Resolve a market (creator only)' },
-        { command: 'positions', description: 'View your open positions' },
-        { command: 'claim', description: 'Claim your winnings' },
-        { command: 'rewards', description: 'View claimable LP fees' },
-        { command: 'claimfees', description: 'Claim LP fees (creators)' },
-        { command: 'export', description: 'View wallet information (DM only)' },
-        { command: 'about', description: 'About the platform' },
+        { command: 'positions', description: 'View positions and LP rewards' },
+        { command: 'claim', description: 'Claim winnings or LP fees' },
+        { command: 'resolve', description: 'Resolve market (creator only)' },
       ]);
       console.log('✅ Bot commands registered with Telegram');
     } catch (error) {

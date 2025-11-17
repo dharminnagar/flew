@@ -108,20 +108,21 @@ npm start
 - `/wallet` - View wallet address and balance
 - `/deposit` - Get deposit instructions
 - `/withdraw <address> <amount>` - Send SOL to an external wallet
-- `/export` - View wallet information and recovery options (DM only)
 
 ### Market Commands
 - `/markets` - View all active prediction markets
-- `/market <id>` - View specific market details
 - `/create` - Create a new prediction market
 
 ### Betting Commands
-- `/positions` - View your open positions
-- `/claim <market_id>` - Claim winnings from a resolved market
+- `/bet <id> <yes/no> <amount>` - Place a bet on a market
+- `/positions` - View your positions and LP rewards
+- `/claim <id>` - Claim winnings or LP fees
+
+### Resolution Commands
+- `/resolve <id> <yes/no>` - Resolve a market (creator only)
 
 ### Info Commands
 - `/help` - Show all commands
-- `/about` - About the platform
 
 ## Usage Examples
 
