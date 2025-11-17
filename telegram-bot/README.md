@@ -4,13 +4,13 @@ A Telegram bot frontend for the F1 Prediction Market built on Solana. This bot p
 
 ## Features
 
-- **🤖 Privy Embedded Wallets**: Self-custodial wallets powered by Privy.io, created automatically for each user
-- **💰 Easy Betting**: Simple inline buttons to place bets with SOL
-- **📊 Market Discovery**: Browse active prediction markets
-- **🎯 Position Tracking**: View all your open positions
-- **💸 Claim Rewards**: Easily claim winnings from resolved markets
-- **🏗️ Market Creation**: Create your own prediction markets
-- **🔐 Secure Signing**: All transactions signed via Privy's secure API
+- **Privy Embedded Wallets**: Self-custodial wallets powered by Privy.io, created automatically for each user
+- **Easy Betting**: Simple inline buttons to place bets with SOL
+- **Market Discovery**: Browse active prediction markets
+- **Position Tracking**: View all your open positions
+- **Claim Rewards**: Easily claim winnings from resolved markets
+- **Market Creation**: Create your own prediction markets
+- **Secure Signing**: All transactions signed via Privy's secure API
 
 ## Architecture
 
