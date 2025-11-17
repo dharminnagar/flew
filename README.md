@@ -307,8 +307,8 @@ This project is open source and available under the MIT License.
 ## Contact & Support
 
 - **GitHub Issues**: For bug reports and feature requests
-- **Telegram**: [@flew_f1_bot] - Try the live bot!
-- **Twitter**: [@dharminnagar] - Follow for updates
+- **Telegram**: [@flew_f1_bot](https://t.me/flew_f1_bot) - Try the live bot!
+- **Twitter**: [@dharminnagar](https://x.com/dharminnagar) - Follow for updates
 
 ---
 
