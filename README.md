@@ -25,6 +25,12 @@ F1 Prediction Market allows users to bet on F1 race outcomes using SOL. The plat
 - **Network**: Solana Devnet
 - **RPC**: `https://api.devnet.solana.com`
 
+## Demo Video
+
+https://github.com/user-attachments/assets/f583a47b-8ccc-4916-bc09-fc72a9038ccd
+
+
+
 ## Architecture Diagram
 
 ### System Architecture
